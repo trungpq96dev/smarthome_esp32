@@ -1,0 +1,3 @@
+# Chi can file nay khi bat USE_MQTT = 1 trong config.h.
+# Wokwi tu cai thu vien duoc liet ke o day.
+PubSubClient

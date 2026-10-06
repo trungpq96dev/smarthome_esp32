@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hướng dẫn nạp firmware ESP32 — bom_nuoc</title>
+<style>
+:root{
+  --bg:#f6f5f1; --card:#fff; --tx:#1b1b19; --tx2:#6a6a63; --bd:#e2e0d8;
+  --acc:#185fa5; --accbg:#e6f1fb; --warn:#854f0b; --warnbg:#faeeda;
+  --err:#a32d2d; --errbg:#fcebeb; --ok:#0f6e56; --okbg:#e1f5ee;
+  --code:#f1efe8;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#15150f; --card:#201f1c; --tx:#f0efe9; --tx2:#9d9c93; --bd:#36352e;
+    --acc:#85b7eb; --accbg:#0c447c; --warn:#fac775; --warnbg:#633806;
+    --err:#f09595; --errbg:#791f1f; --ok:#9fe1cb; --okbg:#085041;
+    --code:#2b2a26;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;padding:28px 16px 64px;background:var(--bg);color:var(--tx);
+  font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:760px;margin:0 auto}
+h1{font-size:26px;font-weight:500;margin:0 0 6px;letter-spacing:-.01em}
+.lede{color:var(--tx2);font-size:15px;margin:0 0 28px}
+h2{font-size:19px;font-weight:500;margin:0 0 14px;display:flex;align-items:center;gap:10px}
+h3{font-size:15px;font-weight:500;margin:24px 0 8px}
+h4{font-size:14px;font-weight:500;margin:18px 0 8px;color:var(--tx2)}
+.step{background:var(--card);border:1px solid var(--bd);border-radius:14px;
+  padding:20px 22px;margin-bottom:16px}
+.n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--acc);
+  color:var(--bg);font-size:15px;display:grid;place-items:center;font-weight:500}
+p{margin:0 0 10px}
+ul,ol{margin:0 0 10px;padding-left:22px}
+li{margin:4px 0}
+code{background:var(--code);padding:2px 6px;border-radius:5px;
+  font:14px/1.4 ui-monospace,Consolas,"Courier New",monospace;word-break:break-all}
+pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;
+  padding:14px 16px;overflow-x:auto;margin:10px 0;position:relative}
+pre code{background:none;padding:0;font-size:13.5px;line-height:1.6}
+.cp{position:absolute;top:8px;right:8px;border:1px solid var(--bd);background:var(--card);
+  color:var(--tx2);font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer;
+  font-family:inherit}
+.cp:hover{color:var(--tx)}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--bd);vertical-align:top}
+th{font-weight:500;color:var(--tx2);font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+tr:last-child td{border-bottom:none}
+.box{border-radius:12px;padding:14px 18px;margin:14px 0;font-size:14.5px;border:1px solid}
+.box p:last-child{margin:0}
+.box b{font-weight:500}
+.info{background:var(--accbg);border-color:var(--acc)}
+.info,.info b{color:var(--acc)}
+.warn{background:var(--warnbg);border-color:var(--warn)}
+.warn,.warn b{color:var(--warn)}
+.danger{background:var(--errbg);border-color:var(--err)}
+.danger,.danger b{color:var(--err)}
+.ok{background:var(--okbg);border-color:var(--ok)}
+.ok,.ok b{color:var(--ok)}
+.path{font:13.5px ui-monospace,Consolas,monospace;background:var(--code);
+  padding:8px 12px;border-radius:8px;display:inline-block;margin:4px 0;word-break:break-all}
+hr{border:none;border-top:1px solid var(--bd);margin:34px 0}
+footer{color:var(--tx2);font-size:13.5px;margin-top:30px}
+.tag{display:inline-block;background:var(--accbg);color:var(--acc);border:1px solid var(--acc);
+  border-radius:999px;padding:1px 10px;font-size:12.5px;margin-right:8px;vertical-align:1px}
+.nav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 24px}
+.nav a{color:var(--tx2);text-decoration:none;font-size:13.5px;border:1px solid var(--bd);
+  background:var(--card);border-radius:999px;padding:5px 13px}
+.nav a:hover{color:var(--tx);border-color:var(--tx2)}
+h2[id]{scroll-margin-top:16px}
+.step[id]{scroll-margin-top:16px}
+svg.wire{width:100%;height:auto;display:block;margin:14px 0 6px}
+svg.wire .bx{fill:var(--card);stroke:var(--bd);stroke-width:1}
+svg.wire .bx-a{fill:var(--accbg);stroke:var(--acc);stroke-width:1}
+svg.wire .bx-w{fill:var(--warnbg);stroke:var(--warn);stroke-width:1}
+svg.wire .bx-o{fill:var(--okbg);stroke:var(--ok);stroke-width:1}
+svg.wire .t{fill:var(--tx);font:500 13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+svg.wire .s{fill:var(--tx2);font:11.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+svg.wire .ta{fill:var(--acc);font:500 13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+svg.wire .sa{fill:var(--acc);font:11.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+svg.wire .tw{fill:var(--warn);font:500 13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+svg.wire .sw{fill:var(--warn);font:11.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+svg.wire .to{fill:var(--ok);font:500 13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+svg.wire .so{fill:var(--ok);font:11.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+svg.wire .ln{stroke:var(--tx2);stroke-width:1.3;fill:none}
+svg.wire .dash{stroke:var(--tx2);stroke-width:1;stroke-dasharray:4 3;fill:none;opacity:.7}
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  .step,.box{break-inside:avoid;border-color:#ccc}
+  .cp,.nav{display:none}
+}
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>Nạp firmware bơm nước lên ESP32</h1>
+<p class="lede"><span class="tag">firmware v1.5</span>
+Giai đoạn 1 — WiFi, trang web nội bộ, toàn bộ logic bơm và cập nhật qua WiFi.
+Chạy được chỉ với mỗi bo ESP32 cắm USB, chưa cần cảm biến nào.</p>
+
+<nav class="nav">
+  <a href="#b1">1. Cài Arduino IDE</a>
+  <a href="#b2">2. Sửa WiFi</a>
+  <a href="#b3">3. Biên dịch thử</a>
+  <a href="#b4">4. Nạp và mở</a>
+  <a href="#test">Thử logic</a>
+  <a href="#ao">Test ảo</a>
+  <a href="#pin">Bảng chân</a>
+  <a href="#so-do">Sơ đồ đấu dây</a>
+  <a href="#nhiet">Nhiệt độ</a>
+  <a href="#wifi">Đổi WiFi</a>
+  <a href="#ota">Cập nhật qua WiFi</a>
+  <a href="#mqtt">Điều khiển qua 4G</a>
+</nav>
+
+<div class="danger box">
+  <p><b>Giai đoạn này chỉ chơi với USB 5V.</b> Chưa đấu relay, chưa đụng tới 220V.</p>
+</div>
+
+<div class="step">
+<h2>Cần chuẩn bị</h2>
+<ul>
+  <li>Bo <b>ESP32 DevKit V1</b> (module ESP-WROOM-32)</li>
+  <li><b>Cáp USB có truyền dữ liệu</b> — cáp chỉ để sạc sẽ không nhận bo</li>
+  <li>Máy tính có mạng, tải khoảng 1&nbsp;GB cho bộ công cụ</li>
+  <li>Điện thoại nối cùng WiFi nhà, để mở trang điều khiển</li>
+</ul>
+</div>
+
+<div class="step" id="b1">
+<h2><span class="n">1</span> Cài Arduino IDE</h2>
+<p>Tải <b>Arduino IDE 2.x</b> tại <code>arduino.cc/en/software</code> rồi cài đặt.</p>
+<p>Mở <code>File → Preferences</code>, dán dòng sau vào ô <b>Additional boards manager URLs</b>:</p>
+<pre><button class="cp" onclick="cp(this)">Chép</button><code>https://espressif.github.io/arduino-esp32/package_esp32_index.json</code></pre>
+<p>Vào <code>Tools → Board → Boards Manager</code>, gõ <code>esp32</code>, cài gói
+<b>esp32 by Espressif Systems</b>. Gói này khoảng 1&nbsp;GB, tải ở mạng nhà sẽ nhanh.</p>
+<div class="ok box"><p>Không cần cài thêm thư viện nào khác. Firmware viết sao cho dùng toàn thư viện có sẵn.</p></div>
+</div>
+
+<div class="step" id="b2">
+<h2><span class="n">2</span> Sửa WiFi và mật khẩu</h2>
+<p>Mở file này bằng Arduino IDE:</p>
+<div class="path">C:\Users\pqtrung8\Projects\bom_nuoc\bom_nuoc.ino</div>
+<p>Sẽ hiện ra 3 tab. Sang tab <code>config.h</code>, sửa 3 dòng:</p>
+<pre><button class="cp" onclick="cp(this)">Chép</button><code>#define WIFI_SSID      "ten_wifi_nha_ban"
+#define WIFI_PASS      "mat_khau"
+#define OTA_PASSWORD   "doi_mat_khau_nay"</code></pre>
+<p><code>OTA_PASSWORD</code> là mật khẩu để nạp firmware từ xa qua trang web, và cũng là mật khẩu
+cần nhập khi đổi WiFi. Đặt luôn từ bây giờ, vì ai vào được WiFi nhà cũng mở được trang điều khiển.</p>
+<div class="info box">
+  <p>Hai dòng WiFi ở đây chỉ dùng cho <b>lần khởi động đầu tiên</b>. Sau đó bo nhớ mạng bạn
+  đặt từ trang web, nên <b>đổi WiFi về sau không phải nạp lại firmware</b> — xem mục
+  <a href="#wifi" style="color:inherit;text-decoration:underline">Đổi WiFi trên web</a>.</p>
+</div>
+<p>Các thông số còn lại để nguyên, chỉnh sau khi đã lắp cảm biến thật.</p>
+</div>
+
+<div class="step" id="b3">
+<h2><span class="n">3</span> Biên dịch thử trước khi cắm bo</h2>
+<p>Chọn <code>Tools → Board → esp32 → ESP32 Dev Module</code>.</p>
+<p>Bấm nút <b>Verify</b> — là dấu tích, không phải mũi tên. Bước này chỉ biên dịch, chưa cần cắm bo.</p>
+<div class="warn box">
+  <p><b>Firmware này chưa từng qua trình biên dịch.</b> Máy ở công ty không tải nổi bộ công cụ
+  vì bị proxy chặn, nên vẫn có thể còn lỗi cú pháp. Nếu Verify báo lỗi, chép nguyên phần chữ đỏ
+  trong ô Output gửi lại để sửa.</p>
+  <p style="margin-top:8px">Chưa có bo, hoặc chưa muốn cài Arduino IDE? Xem mục
+  <a href="#ao" style="color:inherit;text-decoration:underline">Test ảo</a> — chạy thẳng trên
+  trình duyệt và biết ngay code có lỗi hay không.</p>
+</div>
+</div>
+
+<div class="step" id="b4">
+<h2><span class="n">4</span> Nạp và mở trên điện thoại</h2>
+<ol>
+  <li>Cắm ESP32 bằng <b>cáp USB có truyền dữ liệu</b>. Cáp chỉ để sạc sẽ không nhận.</li>
+  <li>Chọn <code>Tools → Partition Scheme → Minimal SPIFFS (1.9MB APP with OTA)</code>.
+      Mặc định chỉ cho 1,25&nbsp;MB mỗi vùng, firmware có WiFi và OTA sẽ rất sát giới hạn.</li>
+  <li>Chọn <code>Tools → Port</code>, lấy cổng COM vừa hiện ra.</li>
+  <li>Bấm <b>Upload</b> (mũi tên).</li>
+  <li>Mở <code>Tools → Serial Monitor</code>, chỉnh tốc độ <b>115200</b>, rồi bấm nút <b>EN</b> trên bo.</li>
+</ol>
+<p>Màn hình sẽ in ra địa chỉ dạng <code>http://192.168.1.xx</code>. Gõ địa chỉ đó vào trình duyệt
+điện thoại — điện thoại phải nối cùng WiFi nhà.</p>
+
+<h3>Nếu gặp trục trặc</h3>
+<table>
+<tr><th>Hiện tượng</th><th>Cách xử lý</th></tr>
+<tr><td>Kẹt ở <code>Connecting....</code></td><td>Giữ nút <b>BOOT</b> trên bo cho tới khi quá trình nạp bắt đầu chạy, rồi thả ra</td></tr>
+<tr><td>Không thấy cổng COM</td><td>Đổi cáp khác, hoặc cài driver <b>CP210x</b> của Silicon Labs</td></tr>
+<tr><td>Serial Monitor ra chữ loạn</td><td>Chỉnh lại tốc độ thành <b>115200</b></td></tr>
+<tr><td>Không nối được WiFi</td><td>Bo tự phát sóng riêng tên <b>BomNuoc-Setup</b>, mật khẩu <b>12345678</b>. Nối vào rồi mở <code>http://192.168.4.1</code></td></tr>
+</table>
+</div>
+
+<hr>
+
+<h2 id="test">Thử logic — không cần cảm biến nào</h2>
+<p>Firmware khởi động ở <b>chế độ mô phỏng</b>: trạng thái phao và lưu lượng lấy từ các nút
+trên trang web chứ không đọc chân thật.</p>
+<div class="info box">
+  <p><b>Đèn LED trên bo sáng nghĩa là bơm lên bồn đang chạy.</b> Nhìn bo là biết logic có đúng không.</p>
+</div>
+
+<table>
+<tr><th>Thử gì</th><th>Thao tác</th><th>Kết quả đúng</th></tr>
+<tr>
+  <td><b>Bơm tự động</b></td>
+  <td>Bấm <i>Bồn đã cạn</i>, rồi bấm <i>Bồn đã đầy</i></td>
+  <td>LED sáng, rồi LED tắt</td>
+</tr>
+<tr>
+  <td><b>Chống chạy cạn</b></td>
+  <td>Để thanh lưu lượng ở <b>0</b>, bấm <i>Bồn đã cạn</i>, chờ <b>45 giây</b></td>
+  <td>Bơm tự tắt, hiện băng đỏ, bị khoá lại. Bấm <i>Xoá lỗi</i> để mở</td>
+</tr>
+<tr>
+  <td><b>Nghỉ giữa 2 lần chạy</b></td>
+  <td>Sau khi bồn đầy, bỏ <i>đã đầy</i> rồi bấm <i>đã cạn</i> ngay</td>
+  <td>Bơm chưa chạy, phải đợi đủ 2 phút</td>
+</tr>
+<tr>
+  <td><b>Khoá liên động van</b></td>
+  <td>Bật <i>Bơm áp</i>, rồi bấm <i>Chảy thường</i></td>
+  <td>Bơm áp tự tắt kèm thông báo</td>
+</tr>
+</table>
+
+<p>Khoá chạy cạn được ghi vào bộ nhớ trong của ESP32, nên rút điện cắm lại vẫn còn khoá.
+Đây là cố ý, vì nguyên nhân làm bơm chạy cạn vẫn chưa được xử lý.</p>
+
+<h3>Xem trạng thái từng chân</h3>
+<p>Thẻ <b>Trạng thái chân ESP32</b> trên trang web hiện mức của 6 chân, đèn xanh là đang tích cực:</p>
+<table>
+<tr><th>Chân</th><th>GPIO</th><th>Loại</th></tr>
+<tr><td>Relay 1 · bơm áp</td><td>18</td><td>đầu ra</td></tr>
+<tr><td>Relay 2 · bơm lên bồn</td><td>19</td><td>đầu ra</td></tr>
+<tr><td>Relay 3 · van mở</td><td>23</td><td>đầu ra</td></tr>
+<tr><td>Relay 4 · van đóng</td><td>13</td><td>đầu ra</td></tr>
+<tr><td>Phao mức thấp</td><td>25</td><td>đầu vào</td></tr>
+<tr><td>Phao mức đầy</td><td>26</td><td>đầu vào</td></tr>
+</table>
+<p>Relay 3 và 4 luôn ngược nhau — đúng như vậy, vì van bi điện cần một đường cấp điện để mở
+và một đường để đóng.</p>
+<div class="info box">
+  <p>Thẻ này để dành cho lúc đấu dây thật. Relay không kêu mà trên web thấy chân đã bật thì lỗi
+  nằm ở dây hoặc ở bo relay, không phải ở phần mềm. Tiết kiệm được nhiều thời gian mò.</p>
+</div>
+
+<hr>
+
+<h2 id="ao">Test ảo khi chưa có phần cứng</h2>
+<p>Có hai cách, bổ sung cho nhau:</p>
+<table>
+<tr><th>Cách</th><th>Thử được gì</th><th>Không thử được gì</th></tr>
+<tr><td><b>Chạy trên máy tính</b><br>(Python)</td>
+    <td>Toàn bộ giao diện, cả trang nội bộ lẫn trang từ xa. Logic bơm, chống chạy cạn, khoá liên động</td>
+    <td>Không chạy code C++ thật</td></tr>
+<tr><td><b>Wokwi</b><br>(trình duyệt)</td>
+    <td>Chạy đúng firmware C++, và <b>biên dịch thật</b> nên biết ngay có lỗi cú pháp không</td>
+    <td>Giao diện web khó mở từ bên ngoài trình mô phỏng</td></tr>
+</table>
+<p>Về nhà nên làm <b>cách 1 trước</b> để xem giao diện cho sướng mắt, rồi <b>cách 2</b> để chắc
+code biên dịch sạch trước khi nạp vào bo.</p>
+
+<h3>Cách 1 — chạy trên máy tính</h3>
+<p>Chỉ cần <b>Python</b> (máy bạn đã có sẵn). Không cần cài thêm thư viện nào.
+Mở PowerShell rồi gõ:</p>
+<pre><button class="cp" onclick="cp(this)">Chép</button><code>python C:\Users\pqtrung8\Projects\bom_nuoc\gia-lap\chay-thu.py</code></pre>
+<p>Cửa sổ sẽ hiện 2 địa chỉ, mở bằng trình duyệt:</p>
+<table>
+<tr><th>Địa chỉ</th><th>Là trang gì</th></tr>
+<tr><td><code>http://127.0.0.1:8899/</code></td>
+    <td>Trang nội bộ, y hệt trang chạy trên bo thật</td></tr>
+<tr><td><code>http://127.0.0.1:8899/tu-xa</code></td>
+    <td>Trang điều khiển từ xa qua 4G (<code>dieu-khien.html</code>)</td></tr>
+</table>
+<div class="ok box">
+  <p><b>Mở cả hai cửa sổ cạnh nhau.</b> Chúng dùng chung một con ESP32 giả lập, nên bấm ở
+  cửa sổ này thì cửa sổ kia đổi theo ngay. Đúng như lúc dùng thật: bạn bấm trên điện thoại
+  ngoài đường, người nhà mở trang nội bộ cũng thấy.</p>
+</div>
+<p>Thanh <b>màu cam</b> ở đầu trang từ xa đóng vai cảm biến — bo thật không có thanh này:</p>
+<table>
+<tr><th>Nút</th><th>Đóng vai</th></tr>
+<tr><td>Bồn: còn nước / ĐÃ CẠN</td><td>Phao mức thấp</td></tr>
+<tr><td>Phao đầy: chưa / ĐÃ ĐẦY</td><td>Phao mức đầy</td></tr>
+<tr><td>Có nước 20 L/ph / KHÔNG có nước</td><td>Cảm biến lưu lượng</td></tr>
+</table>
+<p>Trang nội bộ cũng có thẻ <b>Mô phỏng cảm biến</b> làm việc tương tự.</p>
+
+<h3>Thử gì trên bản chạy máy tính</h3>
+<table>
+<tr><th>Thử</th><th>Làm</th><th>Kết quả đúng</th></tr>
+<tr><td>Bơm tự động</td><td>Bấm <i>Bồn: ĐÃ CẠN</i></td>
+    <td>Bơm chạy ngay dù không bấm gì khác. Thẻ chân: Relay 2 sáng đèn xanh</td></tr>
+<tr><td>Dừng khi đầy</td><td>Bấm <i>Phao đầy: ĐÃ ĐẦY</i></td><td>Bơm tắt tức thì</td></tr>
+<tr><td>Khoá liên động</td><td>Bật <i>Bơm áp</i> rồi bấm <i>Chảy thường</i></td>
+    <td>Bơm áp tự tắt. Relay 3 bật, relay 4 tắt, van hiện <i>đang quay</i> khoảng 15 giây</td></tr>
+<tr><td>Chống chạy cạn</td><td>Bấm <i>KHÔNG có nước</i>, cho bồn cạn, chờ <b>45 giây</b></td>
+    <td>Bơm tự tắt, hiện băng đỏ, bị khoá. Bấm <i>Xoá lỗi</i> để mở</td></tr>
+<tr><td>Nghỉ giữa 2 lần</td><td>Sau khi bồn đầy, bỏ <i>đã đầy</i> rồi cho cạn lại ngay</td>
+    <td>Bơm chưa chạy, phải đợi đủ <b>2 phút</b></td></tr>
+</table>
+<p>Các mốc thời gian lấy đúng theo <code>config.h</code>, nên 45 giây và 2 phút là chờ thật,
+không rút ngắn. Cửa sổ PowerShell in log từng sự kiện, tiện theo dõi.</p>
+<p>Dừng bằng <b>Ctrl + C</b> trong cửa sổ PowerShell.</p>
+
+<div class="warn box">
+  <p><b>Đây là bản mô phỏng hành vi, viết bằng Python.</b> Nó kiểm chứng giao diện và luồng
+  logic đúng chưa, nhưng <b>không phải code C++</b> đang chạy trên bo. Muốn chắc code C++ biên
+  dịch được thì phải dùng cách 2 hoặc bấm Verify trong Arduino IDE.</p>
+</div>
+
+<h3>Cách 2 — Wokwi</h3>
+<p><b>Wokwi</b> là trình mô phỏng ESP32 chạy thẳng trên trình duyệt, miễn phí, không cần cài gì,
+không cần đăng ký. Nó <b>biên dịch thật</b>, nên đây là cách nhanh nhất để biết code có lỗi
+cú pháp hay không.</p>
+
+<h4>Các bước</h4>
+<ol>
+  <li>Vào <code>wokwi.com</code>, bấm <b>New Project</b> rồi chọn <b>ESP32</b>.</li>
+  <li>Tab <code>sketch.ino</code>: xoá sạch, dán toàn bộ nội dung <code>bom_nuoc.ino</code>.</li>
+  <li>Bấm dấu <b>+</b> cạnh danh sách file, chọn <b>New File</b>, đặt tên <code>config.h</code>, dán nội dung vào.</li>
+  <li>Làm tương tự với <code>page.h</code>.</li>
+  <li>Trong <code>config.h</code> đổi WiFi sang mạng ảo của Wokwi:</li>
+</ol>
+<pre><button class="cp" onclick="cp(this)">Chép</button><code>#define WIFI_SSID   "Wokwi-GUEST"
+#define WIFI_PASS   ""</code></pre>
+<p>Bấm nút <b>Play</b>. Biên dịch lỗi thì Wokwi chỉ thẳng ra dòng lỗi.</p>
+
+<h4>Điều khiển bằng Serial Monitor</h4>
+<p>Trang web nội bộ có thể không mở được từ bên ngoài trình mô phỏng. Không sao — firmware có
+sẵn bảng lệnh qua Serial Monitor. Gõ lệnh rồi Enter.</p>
+<table>
+<tr><th>Lệnh</th><th>Tác dụng</th></tr>
+<tr><td><code>s</code></td><td>Xem trạng thái</td></tr>
+<tr><td><code>?</code></td><td>Danh sách lệnh</td></tr>
+<tr><td><code>simAboveLow=0</code></td><td>Giả lập bồn đã cạn</td></tr>
+<tr><td><code>simIsFull=1</code></td><td>Giả lập bồn đã đầy</td></tr>
+<tr><td><code>simFlow=20</code></td><td>Đặt lưu lượng giả lập, L/phút</td></tr>
+<tr><td><code>tank=auto</code> · <code>on</code> · <code>off</code></td><td>Chế độ bơm lên bồn</td></tr>
+<tr><td><code>booster=on</code> · <code>off</code></td><td>Bơm áp</td></tr>
+<tr><td><code>valve=open</code> · <code>close</code></td><td>Van bi</td></tr>
+<tr><td><code>clear=1</code></td><td>Xoá lỗi và mở khoá</td></tr>
+</table>
+<p>Nối nhiều lệnh bằng dấu <code>&amp;</code>, ví dụ <code>simIsFull=0&amp;simAboveLow=0</code>.</p>
+
+<h4>Kịch bản thử</h4>
+<pre><button class="cp" onclick="cp(this)">Chép</button><code>simFlow=20          -&gt; dat luu luong binh thuong
+simAboveLow=0       -&gt; bon can, bom chay, LED sang
+simIsFull=1         -&gt; bon day, bom tat ngay
+
+clear=1
+simIsFull=0&amp;simFlow=0
+simAboveLow=0       -&gt; bom chay nhung khong co nuoc
+                       cho 45 giay, bom tu tat va bao loi chay can
+clear=1             -&gt; mo khoa
+
+booster=on
+valve=open          -&gt; bom ap tu tat vi van bypass mo</code></pre>
+
+<div class="ok box">
+  <p>Cùng bộ lệnh này dùng được luôn trên bo thật khi cắm USB, rất tiện để dò lỗi lúc đã lắp
+  vào tủ mà không muốn mở trình duyệt.</p>
+</div>
+
+<hr>
+
+<h2 id="pin">Bảng chân — để dành khi lắp phần cứng thật</h2>
+<table>
+<tr><th>Chức năng</th><th>GPIO</th><th>Chức năng</th><th>GPIO</th></tr>
+<tr><td>Relay bơm áp</td><td>18</td><td>Phao mức thấp</td><td>25</td></tr>
+<tr><td>Relay bơm lên bồn</td><td>19</td><td>Phao mức đầy</td><td>26</td></tr>
+<tr><td>Relay van bi — mở</td><td>23</td><td>Lưu lượng bơm bồn</td><td>27</td></tr>
+<tr><td>Relay van bi — đóng</td><td>13</td><td>Lưu lượng bơm áp</td><td>14</td></tr>
+<tr><td>Nút xoá lỗi</td><td>33</td><td>LED trên bo</td><td>2</td></tr>
+<tr><td>DS18B20 (1-Wire)</td><td>4</td><td>I2C cảm biến mức</td><td>21 / 22</td></tr>
+</table>
+<p>Cách nối cụ thể xem ở mục <a href="#so-do" style="color:var(--acc)">Sơ đồ đấu dây</a> bên dưới.</p>
+
+<hr>
+
+<h2 id="so-do">Sơ đồ đấu dây</h2>
+
+<h3>Phần điều khiển — chỉ 5V và 12V</h3>
+<p>Đây là phần lắp trước. Chưa có 220V nào ở đây cả.</p>
+
+<svg class="wire" viewBox="0 0 680 384" role="img"
+     aria-label="Sơ đồ mạch điều khiển: adapter 12V qua mạch hạ áp LM2596 ra 5V cấp cho ESP32. Cảm biến phao và lưu lượng đi qua bo opto PC817 vào ESP32. ESP32 điều khiển bo relay 4 kênh.">
+<defs><marker id="arA" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+<rect class="bx" x="20" y="24" width="180" height="46" rx="7"/>
+<text class="t" x="110" y="46" text-anchor="middle">Adapter 12V 2A</text>
+<text class="s" x="110" y="62" text-anchor="middle">loại cắm tường, vỏ kín</text>
+
+<line class="ln" x1="200" y1="47" x2="236" y2="47" marker-end="url(#arA)"/>
+
+<rect class="bx" x="240" y="24" width="180" height="46" rx="7"/>
+<text class="t" x="330" y="46" text-anchor="middle">Mạch hạ áp LM2596</text>
+<text class="s" x="330" y="62" text-anchor="middle">vặn biến trở ra đúng 5V</text>
+
+<line class="ln" x1="420" y1="47" x2="456" y2="47" marker-end="url(#arA)"/>
+
+<rect class="bx-a" x="460" y="24" width="200" height="46" rx="7"/>
+<text class="ta" x="560" y="46" text-anchor="middle">ESP32 — chân VIN</text>
+<text class="sa" x="560" y="62" text-anchor="middle">cấp 5V vào đây</text>
+
+<path class="dash" d="M110 70 V92 H560"/>
+<text class="s" x="120" y="108">12V từ adapter cấp thẳng cho bo opto và bo relay, không qua LM2596</text>
+
+<rect class="bx-o" x="20" y="130" width="150" height="40" rx="6"/>
+<text class="to" x="34" y="148">Phao mức thấp</text>
+<text class="so" x="34" y="163">GPIO 25</text>
+
+<rect class="bx-o" x="20" y="178" width="150" height="40" rx="6"/>
+<text class="to" x="34" y="196">Phao mức đầy</text>
+<text class="so" x="34" y="211">GPIO 26</text>
+
+<rect class="bx-o" x="20" y="226" width="150" height="40" rx="6"/>
+<text class="to" x="34" y="244">Lưu lượng bồn</text>
+<text class="so" x="34" y="259">GPIO 27</text>
+
+<rect class="bx-o" x="20" y="274" width="150" height="40" rx="6"/>
+<text class="to" x="34" y="292">Lưu lượng bơm áp</text>
+<text class="so" x="34" y="307">GPIO 14</text>
+
+<line class="ln" x1="170" y1="150" x2="206" y2="150" marker-end="url(#arA)"/>
+<line class="ln" x1="170" y1="198" x2="206" y2="198" marker-end="url(#arA)"/>
+<line class="ln" x1="170" y1="246" x2="206" y2="246" marker-end="url(#arA)"/>
+<line class="ln" x1="170" y1="294" x2="206" y2="294" marker-end="url(#arA)"/>
+
+<rect class="bx" x="210" y="130" width="90" height="184" rx="7"/>
+<text class="t" x="255" y="212" text-anchor="middle">Opto</text>
+<text class="t" x="255" y="230" text-anchor="middle">PC817</text>
+<text class="s" x="255" y="247" text-anchor="middle">4 kênh</text>
+
+<line class="ln" x1="300" y1="222" x2="336" y2="222" marker-end="url(#arA)"/>
+
+<rect class="bx-a" x="340" y="130" width="130" height="184" rx="7"/>
+<text class="ta" x="405" y="215" text-anchor="middle">ESP32</text>
+<text class="sa" x="405" y="233" text-anchor="middle">DevKit V1</text>
+
+<line class="ln" x1="470" y1="222" x2="506" y2="222" marker-end="url(#arA)"/>
+
+<rect class="bx-w" x="510" y="130" width="150" height="184" rx="7"/>
+<text class="tw" x="585" y="155" text-anchor="middle">Bo relay 12V</text>
+<text class="sw" x="585" y="171" text-anchor="middle">4 kênh, có opto</text>
+<text class="sw" x="526" y="206">1 · bơm áp — G18</text>
+<text class="sw" x="526" y="228">2 · bơm bồn — G19</text>
+<text class="sw" x="526" y="250">3 · van mở — G23</text>
+<text class="sw" x="526" y="272">4 · van đóng — G13</text>
+
+<text class="s" x="20" y="344">Bo relay cắm jumper sang kích mức thấp. Chân ESP32 chạy chế độ open-drain:</text>
+<text class="s" x="20" y="362">kéo xuống GND là relay hút, thả nổi là relay nhả.</text>
+</svg>
+
+<div class="danger box">
+  <p><b>Đấu phao phải đúng chiều.</b> Cả 2 chân phao dùng điện trở kéo lên bên trong ESP32,
+  nên dây đứt sẽ đọc ra mức cao. Phải đấu sao cho mức cao luôn là trạng thái an toàn:</p>
+  <p style="margin-top:8px">Phao mức đầy — tiếp điểm <b>đóng khi chưa đầy</b>, mở ra khi đầy.<br>
+  Phao mức thấp — tiếp điểm <b>đóng khi nước dưới mức thấp</b>, mở ra khi nước lên cao.</p>
+  <p style="margin-top:8px">Đấu đúng chiều này thì đứt dây hay tuột giắc sẽ làm bơm dừng,
+  chứ không làm tràn bồn.</p>
+</div>
+
+<h3>Phần động lực 220V — làm sau cùng</h3>
+<p>Mỗi thiết bị giữ nguyên RCBO riêng đang có. Relay chỉ cắt dây L, dây N đi thẳng từ RCBO tới tải.</p>
+
+<svg class="wire" viewBox="0 0 680 424" role="img"
+     aria-label="Sơ đồ động lực: nguồn 220V qua aptomat tổng chia 4 nhánh RCBO. Mỗi nhánh có PZEM đo điện, rồi relay 30A hoặc contactor, rồi tới tải.">
+<defs><marker id="arB" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+<rect class="bx" x="25" y="20" width="630" height="42" rx="7"/>
+<text class="t" x="340" y="46" text-anchor="middle">Nguồn 220V — aptomat tổng</text>
+
+<line class="ln" x1="100" y1="62" x2="100" y2="90" marker-end="url(#arB)"/>
+<line class="ln" x1="260" y1="62" x2="260" y2="90" marker-end="url(#arB)"/>
+<line class="ln" x1="420" y1="62" x2="420" y2="90" marker-end="url(#arB)"/>
+<line class="ln" x1="580" y1="62" x2="580" y2="90" marker-end="url(#arB)"/>
+
+<rect class="bx" x="25"  y="94" width="150" height="46" rx="6"/>
+<text class="t" x="100" y="115" text-anchor="middle">RCBO bơm áp</text>
+<text class="s" x="100" y="131" text-anchor="middle">đang có sẵn</text>
+<rect class="bx" x="185" y="94" width="150" height="46" rx="6"/>
+<text class="t" x="260" y="115" text-anchor="middle">RCBO bơm bồn</text>
+<text class="s" x="260" y="131" text-anchor="middle">đang có sẵn</text>
+<rect class="bx" x="345" y="94" width="150" height="46" rx="6"/>
+<text class="t" x="420" y="115" text-anchor="middle">RCBO bình 1</text>
+<text class="s" x="420" y="131" text-anchor="middle">đang có sẵn</text>
+<rect class="bx" x="505" y="94" width="150" height="46" rx="6"/>
+<text class="t" x="580" y="115" text-anchor="middle">RCBO bình 2</text>
+<text class="s" x="580" y="131" text-anchor="middle">đang có sẵn</text>
+
+<line class="ln" x1="100" y1="140" x2="100" y2="166" marker-end="url(#arB)"/>
+<line class="ln" x1="260" y1="140" x2="260" y2="166" marker-end="url(#arB)"/>
+<line class="ln" x1="420" y1="140" x2="420" y2="166" marker-end="url(#arB)"/>
+<line class="ln" x1="580" y1="140" x2="580" y2="166" marker-end="url(#arB)"/>
+
+<rect class="bx-o" x="25"  y="170" width="150" height="46" rx="6"/>
+<text class="to" x="100" y="191" text-anchor="middle">PZEM #1</text>
+<text class="so" x="100" y="207" text-anchor="middle">CT kẹp dây L</text>
+<rect class="bx-o" x="185" y="170" width="150" height="46" rx="6"/>
+<text class="to" x="260" y="191" text-anchor="middle">PZEM #2</text>
+<text class="so" x="260" y="207" text-anchor="middle">CT kẹp dây L</text>
+<rect class="bx-o" x="345" y="170" width="150" height="46" rx="6"/>
+<text class="to" x="420" y="191" text-anchor="middle">PZEM #3</text>
+<text class="so" x="420" y="207" text-anchor="middle">CT kẹp dây L</text>
+<rect class="bx-o" x="505" y="170" width="150" height="46" rx="6"/>
+<text class="to" x="580" y="191" text-anchor="middle">PZEM #4</text>
+<text class="so" x="580" y="207" text-anchor="middle">CT kẹp dây L</text>
+
+<line class="ln" x1="100" y1="216" x2="100" y2="242" marker-end="url(#arB)"/>
+<line class="ln" x1="260" y1="216" x2="260" y2="242" marker-end="url(#arB)"/>
+<line class="ln" x1="420" y1="216" x2="420" y2="242" marker-end="url(#arB)"/>
+<line class="ln" x1="580" y1="216" x2="580" y2="242" marker-end="url(#arB)"/>
+
+<rect class="bx-w" x="25"  y="246" width="150" height="46" rx="6"/>
+<text class="tw" x="100" y="267" text-anchor="middle">Relay 30A</text>
+<text class="sw" x="100" y="283" text-anchor="middle">cắt dây L</text>
+<rect class="bx-w" x="185" y="246" width="150" height="46" rx="6"/>
+<text class="tw" x="260" y="267" text-anchor="middle">Contactor 2P 25A</text>
+<text class="sw" x="260" y="283" text-anchor="middle">cuộn hút ← relay 2</text>
+<rect class="bx-w" x="345" y="246" width="150" height="46" rx="6"/>
+<text class="tw" x="420" y="267" text-anchor="middle">Relay 30A</text>
+<text class="sw" x="420" y="283" text-anchor="middle">cắt dây L</text>
+<rect class="bx-w" x="505" y="246" width="150" height="46" rx="6"/>
+<text class="tw" x="580" y="267" text-anchor="middle">Relay 30A</text>
+<text class="sw" x="580" y="283" text-anchor="middle">cắt dây L</text>
+
+<line class="ln" x1="100" y1="292" x2="100" y2="318" marker-end="url(#arB)"/>
+<line class="ln" x1="260" y1="292" x2="260" y2="318" marker-end="url(#arB)"/>
+<line class="ln" x1="420" y1="292" x2="420" y2="318" marker-end="url(#arB)"/>
+<line class="ln" x1="580" y1="292" x2="580" y2="318" marker-end="url(#arB)"/>
+
+<rect class="bx" x="25"  y="322" width="150" height="46" rx="6"/>
+<text class="t" x="100" y="343" text-anchor="middle">Bơm áp 250W</text>
+<text class="s" x="100" y="359" text-anchor="middle">khoảng 1,4 A</text>
+<rect class="bx" x="185" y="322" width="150" height="46" rx="6"/>
+<text class="t" x="260" y="343" text-anchor="middle">Bơm bồn 750W</text>
+<text class="s" x="260" y="359" text-anchor="middle">khoảng 4,3 A</text>
+<rect class="bx" x="345" y="322" width="150" height="46" rx="6"/>
+<text class="t" x="420" y="343" text-anchor="middle">Bình nóng 2500W</text>
+<text class="s" x="420" y="359" text-anchor="middle">khoảng 11,4 A</text>
+<rect class="bx" x="505" y="322" width="150" height="46" rx="6"/>
+<text class="t" x="580" y="343" text-anchor="middle">Bình nóng 2000W</text>
+<text class="s" x="580" y="359" text-anchor="middle">khoảng 9,1 A</text>
+
+<text class="s" x="25" y="398">Bơm bồn dùng contactor vì dòng khởi động tới 20–25 A, relay rời sẽ nhanh rỗ tiếp điểm.</text>
+</svg>
+
+<div class="danger box">
+  <p><b>Chân đo áp của mỗi PZEM và cuộn hút contactor phải lấy dây L và dây N từ cùng một RCBO.</b>
+  Lấy lệch nhánh thì dòng hai dây không bằng nhau và RCBO sẽ nhảy liên tục.</p>
+  <p style="margin-top:8px">Chân đo áp của PZEM đấu <b>trước relay</b>, để nó luôn có điện và đọc được
+  số liệu kể cả khi tải đang tắt.</p>
+</div>
+
+<h3>Đường nước — van bi bypass</h3>
+<p>Van bi điện lắp trên nhánh tránh, cho phép chuyển giữa nước có áp và nước chảy trọng lực.</p>
+
+<svg class="wire" viewBox="0 0 680 250" role="img"
+     aria-label="Sơ đồ ống: nước từ bồn chia hai nhánh. Nhánh trên qua bơm áp rồi van một chiều. Nhánh dưới qua van bi điện làm đường tránh. Hai nhánh gộp lại rồi vào nhà.">
+<defs><marker id="arC" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+<rect class="bx" x="20" y="116" width="110" height="52" rx="7"/>
+<text class="t" x="75" y="138" text-anchor="middle">Bồn mái</text>
+<text class="s" x="75" y="156" text-anchor="middle">1500 L</text>
+
+<line class="ln" x1="130" y1="142" x2="168" y2="142"/>
+<path class="ln" d="M168 142 V84 H208"/>
+<path class="ln" d="M168 142 V200 H208"/>
+
+<rect class="bx-w" x="212" y="60" width="120" height="48" rx="7"/>
+<text class="tw" x="272" y="81" text-anchor="middle">Bơm áp</text>
+<text class="sw" x="272" y="97" text-anchor="middle">relay 1</text>
+
+<line class="ln" x1="332" y1="84" x2="356" y2="84"/>
+
+<rect class="bx" x="360" y="60" width="120" height="48" rx="7"/>
+<text class="t" x="420" y="89" text-anchor="middle">Van một chiều</text>
+
+<rect class="bx-w" x="212" y="176" width="268" height="48" rx="7"/>
+<text class="tw" x="346" y="197" text-anchor="middle">Van bi điện 12V — đường tránh</text>
+<text class="sw" x="346" y="213" text-anchor="middle">relay 3 mở · relay 4 đóng</text>
+
+<path class="ln" d="M480 84 H516 V142"/>
+<path class="ln" d="M480 200 H516 V142"/>
+<line class="ln" x1="516" y1="142" x2="546" y2="142" marker-end="url(#arC)"/>
+
+<rect class="bx" x="550" y="116" width="110" height="52" rx="7"/>
+<text class="t" x="605" y="147" text-anchor="middle">Vào nhà</text>
+</svg>
+
+<table>
+<tr><th>Chế độ</th><th>Van bi</th><th>Bơm áp</th></tr>
+<tr><td>Nước mạnh</td><td>Đóng</td><td>Bật — rơ-le áp suất của bơm tự điều khiển</td></tr>
+<tr><td>Nước chảy thường</td><td>Mở</td><td><b>Tắt</b></td></tr>
+</table>
+
+<div class="warn box">
+  <p><b>Firmware khoá cứng chuyện này.</b> Van mở thì bơm áp bị cắt, kể cả khi bạn bấm nhầm trên app.
+  Van mở mà bơm chạy thì nước quay vòng qua đường tránh, bơm chạy không tải và sẽ hỏng.</p>
+</div>
+
+<hr>
+
+<h2 id="nhiet">Đo nhiệt độ nước bằng DS18B20</h2>
+<p>Mặc định đang <b>tắt</b>. Bật khi đã có cảm biến. Nhiều cảm biến dùng chung một sợi dây
+và chung một chân ESP32, nên gắn thêm con nữa không phải sửa gì ngoài cái tên.</p>
+
+<svg class="wire" viewBox="0 0 680 232" role="img"
+     aria-label="Sơ đồ đấu DS18B20: ba dây từ ESP32 là 3,3V, GPIO 4 và GND nối song song tới các cảm biến. Một điện trở 4,7 kilo-ôm nối giữa dây 3,3V và dây GPIO 4.">
+<defs><marker id="arD" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+<rect class="bx-a" x="20" y="50" width="130" height="120" rx="7"/>
+<text class="ta" x="85" y="105" text-anchor="middle">ESP32</text>
+<text class="sa" x="85" y="123" text-anchor="middle">DevKit V1</text>
+
+<line class="ln" x1="150" y1="78"  x2="426" y2="78"  marker-end="url(#arD)"/>
+<line class="ln" x1="150" y1="110" x2="426" y2="110" marker-end="url(#arD)"/>
+<line class="ln" x1="150" y1="142" x2="426" y2="142" marker-end="url(#arD)"/>
+
+<text class="s" x="160" y="71">3,3V — dây đỏ</text>
+<text class="s" x="160" y="103">GPIO 4 — dây vàng</text>
+<text class="s" x="160" y="135">GND — dây đen</text>
+
+<line class="ln" x1="300" y1="78" x2="300" y2="86"/>
+<rect class="bx-w" x="277" y="86" width="46" height="18" rx="4"/>
+<line class="ln" x1="300" y1="104" x2="300" y2="110"/>
+<text class="sw" x="330" y="99">4,7 kΩ</text>
+
+<rect class="bx-o" x="430" y="50" width="230" height="120" rx="7"/>
+<text class="to" x="545" y="92"  text-anchor="middle">DS18B20 chống nước</text>
+<text class="so" x="545" y="112" text-anchor="middle">nối song song chung 3 dây</text>
+<text class="so" x="545" y="132" text-anchor="middle">thêm con nữa không phải đổi gì</text>
+
+<text class="s" x="20" y="202">Chỉ cần đúng một điện trở 4,7 kΩ cho cả đường dây, dù gắn mấy cảm biến.</text>
+<text class="s" x="20" y="220">Thiếu con điện trở này là không đọc được gì cả.</text>
+</svg>
+
+<h3>Gắn ở đâu</h3>
+<table>
+<tr><th>Vị trí</th><th>Cách gắn</th></tr>
+<tr><td>Bồn mái</td><td>Thả đầu dò vào trong bồn, hoặc kẹp vào ống ra rồi bọc xốp cách nhiệt</td></tr>
+<tr><td>Bình nóng lạnh</td><td>Kẹp vào <b>ống nước nóng đi ra</b> rồi bọc xốp. Không cần chạm nước.
+Số đo thấp hơn trong bình vài độ nhưng đủ biết bình đã nóng chưa</td></tr>
+</table>
+
+<h3>Bật trong firmware</h3>
+<ol>
+  <li><code>Tools → Manage Libraries</code>, cài <b>OneWire</b> (Paul Stoffregen) và
+      <b>DallasTemperature</b> (Miles Burton).</li>
+  <li>Trong <code>config.h</code> đổi <code>USE_TEMPERATURE</code> thành <code>1</code>.</li>
+  <li>Nạp lại. Serial Monitor sẽ in <code>[TEMP] found N sensor(s)</code>.</li>
+</ol>
+
+<div class="warn box">
+  <p><b>Đặt đúng tên cho từng cảm biến.</b> Thư viện xếp cảm biến theo địa chỉ chip, không theo
+  thứ tự bạn cắm dây — nên con số 0 chưa chắc đã là cái bạn nghĩ.</p>
+  <p style="margin-top:8px">Cách xác định: gõ <code>s</code> trong Serial Monitor xem danh sách,
+  lấy tay nắm ấm một đầu dò, chờ chục giây rồi gõ <code>s</code> lại. Chỉ số nào tăng thì đó là
+  con đó. Rồi đổi <code>TEMP_NAME_0</code>, <code>TEMP_NAME_1</code>,
+  <code>TEMP_NAME_2</code> trong <code>config.h</code> cho khớp.</p>
+</div>
+
+<div class="info box">
+  <p><b>Vì sao firmware không chờ đọc xong.</b> Một lần đo của DS18B20 mất khoảng 750&nbsp;ms.
+  Firmware ra lệnh đo rồi quay lại việc khác, tới nhịp sau mới lấy kết quả. Nếu chờ thẳng thì
+  trang web và logic bơm sẽ đứng gần một giây mỗi lần đo.</p>
+</div>
+
+<p>Dây dài dưới 10&nbsp;m dùng dây thường được. Dài hơn nên dùng cáp mạng có chống nhiễu và đổi
+điện trở xuống 2,2&nbsp;kΩ. Đừng dùng kiểu cấp nguồn ký sinh chỉ 2 dây, cứ chạy đủ 3 dây cho chắc.</p>
+
+<hr>
+
+<h2 id="wifi">Đổi WiFi ngay trên web</h2>
+<p>Đổi tên hay mật khẩu WiFi nhà, hay mang bo sang chỗ khác, <b>không phải nạp lại firmware</b>.
+Tên mạng lưu trong bộ nhớ trong của ESP32.</p>
+
+<h3>Cách làm</h3>
+<ol>
+  <li>Mở trang web của bo, kéo xuống thẻ <b>Cài đặt WiFi</b>.</li>
+  <li>Bấm <b>Quét mạng</b> — hiện danh sách WiFi xung quanh kèm độ mạnh sóng. Chọn từ danh sách,
+      hoặc gõ tay nếu mạng nhà bạn ẩn tên.</li>
+  <li>Nhập mật khẩu WiFi, rồi nhập mật khẩu cập nhật (chính là <code>OTA_PASSWORD</code>).</li>
+  <li>Bấm <b>Lưu và khởi động lại</b>. Nối điện thoại sang mạng mới rồi mở lại trang.</li>
+</ol>
+<p>Nút <b>Quên WiFi đã lưu</b> xoá thông tin đã lưu, bo quay về dùng mạng ghi trong
+<code>config.h</code>.</p>
+
+<div class="ok box">
+  <p><b>Nhập sai mật khẩu mạng mới cũng không mất quyền vào.</b> Nối không được thì bo tự phát
+  sóng riêng tên <b>BomNuoc-Setup</b>, mật khẩu <b>12345678</b>. Nối điện thoại vào đó rồi mở
+  <code>http://192.168.4.1</code> là vào lại được để sửa.</p>
+  <p style="margin-top:8px">Lúc phát sóng cứu hộ, bo vẫn quét được mạng xung quanh — đúng lúc
+  cần nhất.</p>
+</div>
+
+<div class="warn box">
+  <p>Phải nhập mật khẩu cập nhật mới đổi được WiFi. Nếu không, bất kỳ ai vào được WiFi nhà
+  cũng có thể đẩy bo sang một mạng khác và bạn mất luôn quyền điều khiển.</p>
+</div>
+
+<p>Địa chỉ IP sau khi đổi mạng sẽ khác. Xem trong Serial Monitor, hoặc thử
+<code>http://bomnuoc.local</code> — iPhone mở được, Android thì hay không.</p>
+
+<hr>
+
+<h2 id="ota">Cập nhật firmware qua WiFi</h2>
+<p>Sau lần nạp đầu bằng USB, những lần sau khỏi phải tháo bo khỏi tủ điện —
+và <b>làm được ngay từ iPhone</b>.</p>
+
+<h3>Lấy file .bin</h3>
+<p>Trong Arduino IDE chọn <code>Sketch → Export Compiled Binary</code>. File nằm ở thư mục
+<code>build/esp32.esp32.esp32/</code> cạnh sketch. Lấy đúng file <code>bom_nuoc.ino.bin</code>,
+<b>không</b> phải mấy file có đuôi <code>.bootloader.bin</code> hay <code>.partitions.bin</code>.</p>
+<p>Gửi file đó sang điện thoại bằng AirDrop hoặc Zalo.</p>
+
+<h3>Nạp</h3>
+<p>Mở trang web của bo, kéo xuống thẻ <b>Cập nhật firmware</b>: chọn file <code>.bin</code>,
+nhập mật khẩu, bấm <b>Nạp firmware</b>. Bơm tự tắt trong lúc cập nhật, xong bo tự khởi động lại.</p>
+
+<div class="warn box">
+  <p><b>Dùng mật khẩu đã đặt ở bước 2</b> — dòng <code>OTA_PASSWORD</code> trong
+  <code>config.h</code>. Nếu còn để nguyên mặc định <code>bomnuoc2026</code> thì đổi ngay,
+  vì ai vào được WiFi nhà cũng mở được trang này.</p>
+  <p style="margin-top:8px">Đang cập nhật thì <b>đừng tắt nguồn</b>. Nạp hỏng giữa chừng thì bo vẫn
+  giữ bản cũ, nhưng đừng thử vận may.</p>
+</div>
+
+<div class="info box">
+  <p><b>Lần nạp đầu tiên vẫn bắt buộc dùng máy tính.</b> iPhone và Android đều không nói chuyện
+  được với chip USB-serial trên bo, và điện thoại cũng không có trình biên dịch.</p>
+</div>
+
+<hr>
+
+<h2 id="mqtt">Điều khiển qua 4G bằng MQTT</h2>
+<p>Mặc định đang <b>tắt</b>, để bản đầu biên dịch được mà không cần cài thư viện nào.
+Bật lên khi đã chạy ổn ở nhà.</p>
+
+<h3>Bước 1 — tạo broker miễn phí</h3>
+<p>Vào <code>hivemq.com/company/get-started</code>, đăng ký rồi tạo cụm
+<b>Serverless (free)</b>. Chỉ cần email, không cần thẻ thanh toán.</p>
+<p>Trong cụm, vào <b>Access Management</b> tạo <b>2 tài khoản</b> riêng:</p>
+<table>
+<tr><th>Tài khoản</th><th>Dùng cho</th><th>Vì sao tách</th></tr>
+<tr><td><code>bomnuoc</code></td><td>ESP32</td><td rowspan="2">Lộ cái nào thì chỉ cần đổi cái đó, không phải nạp lại firmware</td></tr>
+<tr><td><code>phone</code></td><td>Điện thoại</td></tr>
+</table>
+<p>Ghi lại địa chỉ cụm, dạng <code>xxxxxxxx.s1.eu.hivemq.cloud</code>.</p>
+
+<h3>Bước 2 — cài thư viện</h3>
+<p><code>Tools → Manage Libraries</code>, tìm <b>PubSubClient</b> của <b>Nick O'Leary</b>, bấm Install.</p>
+
+<h3>Bước 3 — bật trong config.h</h3>
+<pre><button class="cp" onclick="cp(this)">Chép</button><code>#define USE_MQTT    1
+#define MQTT_HOST   "xxxxxxxx.s1.eu.hivemq.cloud"
+#define MQTT_USER   "bomnuoc"
+#define MQTT_PASS   "mat_khau_tai_khoan_bomnuoc"</code></pre>
+<p>Nạp lại qua USB hoặc OTA. Serial Monitor sẽ in <code>[MQTT] connected</code>.</p>
+
+<h3>Bước 4 — mở trang điều khiển trên điện thoại</h3>
+<p>Gửi file <code>dieu-khien.html</code> sang điện thoại bằng AirDrop hoặc Zalo, mở bằng
+trình duyệt. Nhập địa chỉ cụm, cổng <code>8884</code>, tài khoản <code>phone</code> và mật khẩu
+của nó, bấm <b>Kết nối</b>.</p>
+<p>Thông tin lưu lại trong trình duyệt, lần sau mở là tự nối. Dùng được ở mọi nơi có 4G.</p>
+
+<div class="ok box">
+  <p><b>Logic tự động vẫn chạy trên ESP32.</b> Mất internet thì bơm vẫn tự bật tắt theo phao,
+  vẫn chống chạy cạn, vẫn giới hạn thời gian. Chỉ mất phần điều khiển từ xa thôi.</p>
+</div>
+
+<div class="info box">
+  <p><b>Biết được khi nào bo mất điện.</b> Topic <code>bomnuoc/status</code> dùng cơ chế
+  <i>last will</i>: mất điện hay mất mạng thì broker tự báo <code>offline</code>. Trang trên
+  điện thoại còn tự cảnh báo nếu quá 40 giây không nhận được số liệu mới — để bạn không nhìn
+  vào màn hình cũ mà tưởng mọi thứ vẫn ổn.</p>
+</div>
+
+<p>Lượng dữ liệu khoảng 60&nbsp;MB một tháng. Gói free của HiveMQ cho 10&nbsp;GB nên thừa rất nhiều.</p>
+
+<hr>
+
+<h2>Chưa có trong bản này</h2>
+<ul>
+  <li>Đo mức nước ra phần trăm — hàm quy đổi cho bồn nằm đã viết sẵn</li>
+  <li>Đo điện bằng PZEM-004T</li>
+</ul>
+<p>Làm tiếp từng phần sau khi bản này chạy ổn.</p>
+
+<footer>
+Thư mục dự án: <code>C:\Users\pqtrung8\Projects\bom_nuoc\</code><br>
+Bản hướng dẫn chi tiết hơn nằm trong <code>README.md</code> cùng thư mục.
+</footer>
+
+</div>
+<script>
+function cp(btn){
+  var t = btn.parentElement.querySelector('code').innerText;
+  navigator.clipboard.writeText(t).then(function(){
+    var old = btn.textContent;
+    btn.textContent = 'Đã chép';
+    setTimeout(function(){ btn.textContent = old; }, 1400);
+  }).catch(function(){ btn.textContent = 'Chép tay giúp mình'; });
+}
+</script>
+</body>
+</html>
